@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"io/fs"
 	"log"
 	"os"
-	"path/filepath"
 
+	"jonesrussell/jekyll-publisher/filehandler"
+	"jonesrussell/jekyll-publisher/ui"
+
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -19,37 +21,49 @@ func Run(args []string) {
 	sitePath := args[1]
 	app := tview.NewApplication()
 
-	list := tview.NewList().
-		ShowSecondaryText(false).
-		SetHighlightFullLine(true)
+	dashboard, draftsList, postsList := ui.CreateDashboard()
 
-	list.AddItem("_drafts", "", 0, nil)
-	addFilenamesToList(sitePath, "_drafts", list)
-	list.AddItem("_posts", "", 0, nil)
-	addFilenamesToList(sitePath, "_posts", list)
+	drafts, err := filehandler.GetFilenames(sitePath, "_drafts")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for _, draft := range drafts {
+		draftsList.AddItem(draft, "", 0, nil)
+	}
 
-	list.SetSelectedFunc(func(i int, mainText string, secondaryText string, shortcut rune) {
+	posts, err := filehandler.GetFilenames(sitePath, "_posts")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for _, post := range posts {
+		postsList.AddItem(post, "", 0, nil)
+	}
+
+	// Add a special "Exit" item to the list
+	draftsList.AddItem("Exit", "", 0, func() {
+		app.Stop()
+	})
+	postsList.AddItem("Exit", "", 0, func() {
 		app.Stop()
 	})
 
-	if err := app.SetRoot(list, true).Run(); err != nil {
+	// Create a slice of the lists to switch focus between
+	lists := []*tview.List{draftsList, postsList}
+	focusIndex := 0
+
+	// Set input capture to switch focus on Tab key press
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			focusIndex = (focusIndex + 1) % len(lists)
+			app.SetFocus(lists[focusIndex])
+		}
+		return event
+	})
+
+	if err := app.SetRoot(dashboard, true).Run(); err != nil {
 		log.Println("Could not set root")
 		panic(err)
-	}
-}
-
-func addFilenamesToList(sitePath string, dirName string, list *tview.List) {
-	dirPath := filepath.Join(sitePath, dirName)
-	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() {
-			list.AddItem(filepath.Base(path), "", 0, nil)
-		}
-		return nil
-	})
-	if err != nil {
-		fmt.Printf("Error reading %s: %v\n", dirName, err)
 	}
 }
