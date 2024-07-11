@@ -19,7 +19,7 @@ type UIInterface interface {
 type UI struct {
 }
 
-// Ensure Menu implements MenuInterface
+// Ensure UI implements UIInterface
 var _ UIInterface = &UI{}
 
 func (ui UI) createNode(title string, items []string) *tview.TreeNode {
