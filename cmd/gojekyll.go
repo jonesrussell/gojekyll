@@ -12,6 +12,17 @@ import (
 	"github.com/rivo/tview"
 )
 
+// addItemsToList adds items to a list and handles any errors.
+func addItemsToList(list *tview.List, items []string, err error) {
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for _, item := range items {
+		list.AddItem(item, "", 0, nil)
+	}
+}
+
 func Run(args []string) {
 	if len(args) < 2 {
 		fmt.Println("Please provide the path to the Jekyll site as an argument.")
@@ -23,23 +34,11 @@ func Run(args []string) {
 
 	dashboard, draftsList, postsList := ui.CreateDashboard()
 
+	// Add drafts and posts to the lists
 	drafts, err := filehandler.GetFilenames(sitePath, "_drafts")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	for _, draft := range drafts {
-		draftsList.AddItem(draft, "", 0, nil)
-	}
-
+	addItemsToList(draftsList, drafts, err)
 	posts, err := filehandler.GetFilenames(sitePath, "_posts")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	for _, post := range posts {
-		postsList.AddItem(post, "", 0, nil)
-	}
+	addItemsToList(postsList, posts, err)
 
 	// Add a special "Exit" item to the list
 	draftsList.AddItem("Exit", "", 0, func() {
