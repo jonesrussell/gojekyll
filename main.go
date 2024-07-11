@@ -18,6 +18,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	app := cmd.NewApp(filehandler.FileHandler{}, ui.UI{}, logger)
+	if len(os.Args) < 2 {
+		fmt.Println("Please provide the path to the Jekyll site as an argument.")
+		os.Exit(1)
+	}
+
+	sitePath := os.Args[1]
+	app := cmd.NewApp(filehandler.FileHandler{}, ui.NewUI(sitePath), logger)
 	app.Run(os.Args)
 }

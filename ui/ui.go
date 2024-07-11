@@ -8,21 +8,24 @@ import (
 )
 
 type UIInterface interface {
-	CreateDashboard(
-		repoPath string,
-		drafts []string,
-		posts []string,
-	) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView)
-	CreateGitView(repoPath string) *tview.TextView
+	CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView)
+	CreateGitView() *tview.TextView
 }
 
 type UI struct {
+	sitePath string
 }
 
 // Ensure UI implements UIInterface
 var _ UIInterface = &UI{}
 
-func (ui UI) createNode(title string, items []string) *tview.TreeNode {
+func NewUI(sitePath string) *UI {
+	return &UI{
+		sitePath: sitePath,
+	}
+}
+
+func (ui *UI) createNode(title string, items []string) *tview.TreeNode {
 	node := tview.NewTreeNode(title)
 	for _, item := range items {
 		node.AddChild(tview.NewTreeNode(item))
@@ -31,12 +34,8 @@ func (ui UI) createNode(title string, items []string) *tview.TreeNode {
 }
 
 // CreateDashboard creates a new tview.Flex that contains two lists titled "Drafts" and "Posts".
-func (ui UI) CreateDashboard(
-	repoPath string,
-	drafts []string,
-	posts []string,
-) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView) {
-	gitView := ui.CreateGitView(repoPath)
+func (ui *UI) CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView) {
+	gitView := ui.CreateGitView()
 
 	// Create a tree for the menu
 	menu := tview.NewTreeView()
@@ -68,15 +67,15 @@ func (ui UI) CreateDashboard(
 	return dashboard, menu, contentView, gitView
 }
 
-func (ui UI) CreateGitView(repoPath string) *tview.TextView {
+func (ui *UI) CreateGitView() *tview.TextView {
 	gitView := tview.NewTextView()
 
-	// Check if the repoPath is a Git repository
-	_, err := git.PlainOpen(repoPath)
+	// Check if the sitePath is a Git repository
+	_, err := git.PlainOpen(ui.sitePath)
 	if err != nil {
-		gitView.SetText(fmt.Sprintf("The directory %s is not a Git repository. Consider running 'git init'.\n", repoPath))
+		gitView.SetText(fmt.Sprintf("The directory %s is not a Git repository. Consider running 'git init'.\n", ui.sitePath))
 	} else {
-		gitView.SetText(fmt.Sprintf("The directory %s is a Git repository.\n", repoPath))
+		gitView.SetText(fmt.Sprintf("The directory %s is a Git repository.\n", ui.sitePath))
 	}
 
 	return gitView

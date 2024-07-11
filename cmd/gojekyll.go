@@ -16,7 +16,7 @@ import (
 
 type App struct {
 	fileHandler filehandler.FileHandler
-	ui          ui.UI
+	ui          *ui.UI
 	logger      logger.LoggerInterface
 }
 
@@ -28,7 +28,7 @@ type AppContext struct {
 	gitView     tview.Primitive
 }
 
-func NewApp(fileHandler filehandler.FileHandler, ui ui.UI, logger logger.LoggerInterface) *App {
+func NewApp(fileHandler filehandler.FileHandler, ui *ui.UI, logger logger.LoggerInterface) *App {
 	return &App{
 		fileHandler: fileHandler,
 		ui:          ui,
@@ -58,7 +58,7 @@ func (a *App) Run(args []string) {
 	}
 
 	// Create the dashboard with drafts and posts
-	dashboard, menu, contentView, gitView := a.ui.CreateDashboard(sitePath, drafts, posts)
+	dashboard, menu, contentView, gitView := a.ui.CreateDashboard(drafts, posts)
 
 	ctx := &AppContext{
 		sitePath:    sitePath,
