@@ -18,6 +18,14 @@ type UI struct {
 // Ensure Menu implements MenuInterface
 var _ UIInterface = &UI{}
 
+func (ui UI) createNode(title string, items []string) *tview.TreeNode {
+	node := tview.NewTreeNode(title)
+	for _, item := range items {
+		node.AddChild(tview.NewTreeNode(item))
+	}
+	return node
+}
+
 // CreateDashboard creates a new tview.Flex that contains two lists titled "Drafts" and "Posts".
 func (ui UI) CreateDashboard(repoPath string, drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView) {
 	gitView := ui.CreateGitView(repoPath)
@@ -29,21 +37,11 @@ func (ui UI) CreateDashboard(repoPath string, drafts []string, posts []string) (
 	root := tview.NewTreeNode("")
 
 	// Add drafts and posts to the tree
-	draftsNode := tview.NewTreeNode("Drafts")
-	for _, draft := range drafts {
-		draftsNode.AddChild(tview.NewTreeNode(draft))
-	}
-	root.AddChild(draftsNode)
-
-	postsNode := tview.NewTreeNode("Posts")
-	for _, post := range posts {
-		postsNode.AddChild(tview.NewTreeNode(post))
-	}
-	root.AddChild(postsNode)
+	root.AddChild(ui.createNode("Drafts", drafts))
+	root.AddChild(ui.createNode("Posts", posts))
 
 	// Add an "Exit" option to the tree
-	exitNode := tview.NewTreeNode("Exit")
-	root.AddChild(exitNode)
+	root.AddChild(tview.NewTreeNode("Exit"))
 
 	menu.SetRoot(root).SetCurrentNode(root)
 
