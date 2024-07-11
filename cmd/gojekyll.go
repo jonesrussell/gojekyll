@@ -53,19 +53,31 @@ func (a *App) Run(args []string) {
 	// Create the dashboard with drafts and posts
 	dashboard, menu, contentView, gitView := a.ui.CreateDashboard(sitePath, drafts, posts)
 
-	// Set the selected function to handle "Exit"
 	// Set the selected function to handle "Exit" and preview content
 	menu.SetSelectedFunc(func(node *tview.TreeNode) {
 		if node.GetText() == "Exit" {
 			app.Stop()
 		} else {
+			// Get the path of the selected node
+			pathNodes := menu.GetPath(node)
+
+			// Determine the directory of the selected file
+			var dir string
+			if pathNodes[1].GetText() == "Drafts" {
+				dir = "_drafts"
+			} else if pathNodes[1].GetText() == "Posts" {
+				dir = "_posts"
+			} else {
+				return
+			}
+
 			// Get the path of the selected file
-			filePath := path.Join(sitePath, node.GetText())
+			filePath := path.Join(sitePath, dir, node.GetText())
 
 			// Read the content of the file
 			content, err := os.ReadFile(filePath)
 			if err != nil {
-				log.Println(err)
+				a.logger.Error("Could not read file", err, "path", filePath)
 				return
 			}
 
