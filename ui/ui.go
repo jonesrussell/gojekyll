@@ -27,7 +27,11 @@ func (ui UI) createNode(title string, items []string) *tview.TreeNode {
 }
 
 // CreateDashboard creates a new tview.Flex that contains two lists titled "Drafts" and "Posts".
-func (ui UI) CreateDashboard(repoPath string, drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView) {
+func (ui UI) CreateDashboard(
+	repoPath string,
+	drafts []string,
+	posts []string,
+) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView) {
 	gitView := ui.CreateGitView(repoPath)
 
 	// Create a tree for the menu
