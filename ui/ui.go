@@ -8,7 +8,7 @@ import (
 )
 
 type UIInterface interface {
-	CreateDashboard() (*tview.Flex, *tview.List, *tview.List)
+	CreateDashboard(repoPath string) (*tview.Flex, *tview.List, *tview.List, *tview.TextView)
 	CreateGitView(repoPath string) *tview.TextView
 }
 
@@ -28,15 +28,17 @@ func createList(title string) (*tview.Flex, *tview.List) {
 }
 
 // CreateDashboard creates a new tview.Flex that contains two lists titled "Drafts" and "Posts".
-func (ui UI) CreateDashboard() (*tview.Flex, *tview.List, *tview.List) {
+func (ui UI) CreateDashboard(repoPath string) (*tview.Flex, *tview.List, *tview.List, *tview.TextView) {
 	drafts, draftsList := createList("Drafts")
 	posts, postsList := createList("Posts")
+	gitView := ui.CreateGitView(repoPath)
 
 	dashboard := tview.NewFlex().
+		AddItem(gitView, 0, 1, false).
 		AddItem(drafts, 0, 1, true).
 		AddItem(posts, 0, 1, false)
 
-	return dashboard, draftsList, postsList
+	return dashboard, draftsList, postsList, gitView
 }
 
 func (ui UI) CreateGitView(repoPath string) *tview.TextView {

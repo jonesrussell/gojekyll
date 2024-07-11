@@ -33,7 +33,7 @@ func (a *App) Run(args []string) {
 	sitePath := args[1]
 	app := tview.NewApplication()
 
-	dashboard, draftsList, postsList := a.ui.CreateDashboard()
+	dashboard, draftsList, postsList, _ := a.ui.CreateDashboard(sitePath)
 
 	// Add drafts and posts to the lists
 	drafts, err := a.fileHandler.GetFilenames(sitePath, "_drafts")
