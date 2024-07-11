@@ -23,9 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	appFileHandler := filehandler.NewFileHandler()
-
 	sitePath := os.Args[1]
-	app := cmd.NewApp(appFileHandler, ui.NewUI(sitePath), appLogger)
+	app := cmd.NewApp(filehandler.NewFileHandler(), ui.NewUI(sitePath), appLogger)
 	app.Run(os.Args)
 }
