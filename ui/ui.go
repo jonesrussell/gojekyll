@@ -1,11 +1,15 @@
 package ui
 
 import (
+	"fmt"
+
+	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
 )
 
 type UIInterface interface {
 	CreateDashboard() (*tview.Flex, *tview.List, *tview.List)
+	CreateGitView(repoPath string) *tview.TextView
 }
 
 type UI struct {
@@ -33,4 +37,18 @@ func (ui UI) CreateDashboard() (*tview.Flex, *tview.List, *tview.List) {
 		AddItem(posts, 0, 1, false)
 
 	return dashboard, draftsList, postsList
+}
+
+func (ui UI) CreateGitView(repoPath string) *tview.TextView {
+	gitView := tview.NewTextView()
+
+	// Check if the repoPath is a Git repository
+	_, err := git.PlainOpen(repoPath)
+	if err != nil {
+		gitView.SetText(fmt.Sprintf("The directory %s is not a Git repository. Consider running 'git init'.\n", repoPath))
+	} else {
+		gitView.SetText(fmt.Sprintf("The directory %s is a Git repository.\n", repoPath))
+	}
+
+	return gitView
 }
