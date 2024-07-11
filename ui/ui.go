@@ -4,17 +4,19 @@ import (
 	"github.com/rivo/tview"
 )
 
+// createList creates a new tview.List with the given title.
+func createList(title string) (*tview.Flex, *tview.List) {
+	list := tview.NewList().ShowSecondaryText(false).SetHighlightFullLine(true)
+	flex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(tview.NewTextView().SetText(title), 2, 1, false).
+		AddItem(list, 0, 1, true)
+	return flex, list
+}
+
+// CreateDashboard creates a new tview.Flex that contains two lists titled "Drafts" and "Posts".
 func CreateDashboard() (*tview.Flex, *tview.List, *tview.List) {
-	draftsList := tview.NewList().ShowSecondaryText(false).SetHighlightFullLine(true)
-	postsList := tview.NewList().ShowSecondaryText(false).SetHighlightFullLine(true)
-
-	drafts := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(tview.NewTextView().SetText("Drafts"), 2, 1, false).
-		AddItem(draftsList, 0, 1, true)
-
-	posts := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(tview.NewTextView().SetText("Posts"), 2, 1, false).
-		AddItem(postsList, 0, 1, false)
+	drafts, draftsList := createList("Drafts")
+	posts, postsList := createList("Posts")
 
 	dashboard := tview.NewFlex().
 		AddItem(drafts, 0, 1, true).
