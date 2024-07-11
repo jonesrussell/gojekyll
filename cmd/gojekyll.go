@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 
 	"jonesrussell/jekyll-publisher/filehandler"
 	"jonesrussell/jekyll-publisher/ui"
@@ -50,9 +51,24 @@ func (a *App) Run(args []string) {
 	dashboard, menu, contentView, gitView := a.ui.CreateDashboard(sitePath, drafts, posts)
 
 	// Set the selected function to handle "Exit"
+	// Set the selected function to handle "Exit" and preview content
 	menu.SetSelectedFunc(func(node *tview.TreeNode) {
 		if node.GetText() == "Exit" {
 			app.Stop()
+		} else {
+			// Get the path of the selected file
+			filePath := path.Join(sitePath, node.GetText())
+
+			// Read the content of the file
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			log.Println(string(content))
+			// Display the content in contentView
+			contentView.SetText(string(content))
 		}
 	})
 
