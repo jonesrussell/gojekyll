@@ -20,6 +20,14 @@ type App struct {
 	logger      logger.LoggerInterface
 }
 
+type AppContext struct {
+	sitePath    string
+	tviewApp    *tview.Application
+	menu        *tview.TreeView
+	contentView *tview.TextView
+	gitView     tview.Primitive
+}
+
 func NewApp(fileHandler filehandler.FileHandler, ui ui.UI, logger logger.LoggerInterface) *App {
 	return &App{
 		fileHandler: fileHandler,
@@ -52,11 +60,19 @@ func (a *App) Run(args []string) {
 	// Create the dashboard with drafts and posts
 	dashboard, menu, contentView, gitView := a.ui.CreateDashboard(sitePath, drafts, posts)
 
+	ctx := &AppContext{
+		sitePath:    sitePath,
+		tviewApp:    tviewApp,
+		menu:        menu,
+		contentView: contentView,
+		gitView:     gitView,
+	}
+
 	// Set the selected function to handle "Exit" and preview content
-	a.setMenuSelectedFunc(menu, tviewApp, sitePath, contentView)
+	a.setMenuSelectedFunc(ctx)
 
 	// Set input capture to switch focus on Tab key press
-	a.setInputCapture(tviewApp, gitView, menu, contentView)
+	a.setInputCapture(ctx)
 
 	if err := tviewApp.SetRoot(dashboard, true).Run(); err != nil {
 		log.Println("Could not set root")
@@ -68,19 +84,19 @@ func (a *App) getFilenames(sitePath, dir string) ([]string, error) {
 	return a.fileHandler.GetFilenames(sitePath, dir)
 }
 
-func (a *App) setMenuSelectedFunc(menu *tview.TreeView, tviewApp *tview.Application, sitePath string, contentView *tview.TextView) {
-	menu.SetSelectedFunc(func(node *tview.TreeNode) {
+func (a *App) setMenuSelectedFunc(ctx *AppContext) {
+	ctx.menu.SetSelectedFunc(func(node *tview.TreeNode) {
 		if node.GetText() == "Exit" {
-			tviewApp.Stop()
+			ctx.tviewApp.Stop()
 		} else {
-			a.handleFileSelection(node, sitePath, contentView, menu)
+			a.handleFileSelection(node, ctx)
 		}
 	})
 }
 
-func (a *App) handleFileSelection(node *tview.TreeNode, sitePath string, contentView *tview.TextView, menu *tview.TreeView) {
+func (a *App) handleFileSelection(node *tview.TreeNode, ctx *AppContext) {
 	// Get the path of the selected node
-	pathNodes := menu.GetPath(node)
+	pathNodes := ctx.menu.GetPath(node)
 
 	// Determine the directory of the selected file
 	var dir string
@@ -93,7 +109,7 @@ func (a *App) handleFileSelection(node *tview.TreeNode, sitePath string, content
 	}
 
 	// Get the path of the selected file
-	filePath := path.Join(sitePath, dir, node.GetText())
+	filePath := path.Join(ctx.sitePath, dir, node.GetText())
 
 	// Read the content of the file
 	content, err := a.fileHandler.ReadFile(filePath)
@@ -104,18 +120,18 @@ func (a *App) handleFileSelection(node *tview.TreeNode, sitePath string, content
 
 	a.logger.Debug(string(content))
 	// Display the content in contentView
-	contentView.SetText(string(content))
+	ctx.contentView.SetText(string(content))
 }
 
-func (a *App) setInputCapture(tviewApp *tview.Application, gitView, menu, contentView tview.Primitive) {
-	tviewApp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+func (a *App) setInputCapture(ctx *AppContext) {
+	ctx.tviewApp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			if tviewApp.GetFocus() == gitView {
-				tviewApp.SetFocus(menu)
-			} else if tviewApp.GetFocus() == menu {
-				tviewApp.SetFocus(contentView)
+			if ctx.tviewApp.GetFocus() == ctx.gitView {
+				ctx.tviewApp.SetFocus(ctx.menu)
+			} else if ctx.tviewApp.GetFocus() == ctx.menu {
+				ctx.tviewApp.SetFocus(ctx.contentView)
 			} else {
-				tviewApp.SetFocus(gitView)
+				ctx.tviewApp.SetFocus(ctx.gitView)
 			}
 		}
 		return event
