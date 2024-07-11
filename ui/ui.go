@@ -48,9 +48,13 @@ func (ui UI) CreateDashboard(repoPath string, drafts []string, posts []string) (
 	// Create a text view for the content of the selected draft or post
 	contentView := tview.NewTextView()
 
+	// Create a flex for the first column
+	firstColumn := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(gitView, 2, 1, false). // gitView takes up a fixed space
+		AddItem(menu, 0, 1, true)      // menu takes up the remaining space
+
 	dashboard := tview.NewFlex().
-		AddItem(gitView, 0, 1, false).
-		AddItem(menu, 0, 1, true).
+		AddItem(firstColumn, 0, 1, true).
 		AddItem(contentView, 0, 1, false)
 
 	return dashboard, menu, contentView, gitView
