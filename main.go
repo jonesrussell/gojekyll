@@ -5,6 +5,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/rivo/tview"
 )
 
 func main() {
@@ -14,18 +16,34 @@ func main() {
 	}
 
 	sitePath := os.Args[1]
-	printFilenames(sitePath, "_drafts")
-	printFilenames(sitePath, "_posts")
+	app := tview.NewApplication()
+
+	list := tview.NewList().
+		ShowSecondaryText(false).
+		SetHighlightFullLine(true)
+
+	list.AddItem("_drafts", "", 0, nil)
+	addFilenamesToList(sitePath, "_drafts", list)
+	list.AddItem("_posts", "", 0, nil)
+	addFilenamesToList(sitePath, "_posts", list)
+
+	list.SetSelectedFunc(func(i int, mainText string, secondaryText string, shortcut rune) {
+		app.Stop()
+	})
+
+	if err := app.SetRoot(list, true).Run(); err != nil {
+		panic(err)
+	}
 }
 
-func printFilenames(sitePath string, dirName string) {
+func addFilenamesToList(sitePath string, dirName string, list *tview.List) {
 	dirPath := filepath.Join(sitePath, dirName)
 	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
-			fmt.Printf("File in %s: %s\n", dirName, path)
+			list.AddItem(filepath.Base(path), "", 0, nil)
 		}
 		return nil
 	})
