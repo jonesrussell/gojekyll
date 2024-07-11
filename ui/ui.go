@@ -8,7 +8,11 @@ import (
 )
 
 type UIInterface interface {
-	CreateDashboard(repoPath string, drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView)
+	CreateDashboard(
+		repoPath string,
+		drafts []string,
+		posts []string,
+	) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView)
 	CreateGitView(repoPath string) *tview.TextView
 }
 
