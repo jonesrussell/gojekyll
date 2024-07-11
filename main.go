@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -32,6 +33,7 @@ func main() {
 	})
 
 	if err := app.SetRoot(list, true).Run(); err != nil {
+		log.Println("Could not set root")
 		panic(err)
 	}
 }
