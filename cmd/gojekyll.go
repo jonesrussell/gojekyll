@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"jonesrussell/jekyll-publisher/filehandler"
+	"jonesrussell/jekyll-publisher/logger"
 	"jonesrussell/jekyll-publisher/ui"
 
 	"github.com/gdamore/tcell/v2"
@@ -16,12 +17,14 @@ import (
 type App struct {
 	fileHandler filehandler.FileHandler
 	ui          ui.UI
+	logger      logger.LoggerInterface
 }
 
-func NewApp(fileHandler filehandler.FileHandler, ui ui.UI) *App {
+func NewApp(fileHandler filehandler.FileHandler, ui ui.UI, logger logger.LoggerInterface) *App {
 	return &App{
 		fileHandler: fileHandler,
 		ui:          ui,
+		logger:      logger,
 	}
 }
 
@@ -66,7 +69,7 @@ func (a *App) Run(args []string) {
 				return
 			}
 
-			log.Println(string(content))
+			a.logger.Debug(string(content))
 			// Display the content in contentView
 			contentView.SetText(string(content))
 		}
