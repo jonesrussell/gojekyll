@@ -12,7 +12,7 @@ import (
 
 func main() {
 	logFilePath := "/tmp/gox.log"
-	logger, err := logger.NewLogger(logFilePath)
+	appLogger, err := logger.NewLogger(logFilePath)
 	if err != nil {
 		fmt.Println("Error creating logger:", err)
 		os.Exit(1)
@@ -23,7 +23,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	appFileHandler := filehandler.NewFileHandler()
+
 	sitePath := os.Args[1]
-	app := cmd.NewApp(filehandler.FileHandler{}, ui.NewUI(sitePath), logger)
+	app := cmd.NewApp(appFileHandler, ui.NewUI(sitePath), appLogger)
 	app.Run(os.Args)
 }

@@ -18,6 +18,10 @@ type FileHandler struct {
 // Ensure FileHandler implements FileHandlerInterface
 var _ FileHandlerInterface = &FileHandler{}
 
+func NewFileHandler() *FileHandler {
+	return &FileHandler{}
+}
+
 func (fh FileHandler) GetFilenames(sitePath string, dirName string) ([]string, error) {
 	var filenames []string
 	dirPath := filepath.Join(sitePath, dirName)
