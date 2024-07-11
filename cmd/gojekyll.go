@@ -133,7 +133,22 @@ func (a *App) setInputCapture(ctx *AppContext) {
 			} else {
 				ctx.tviewApp.SetFocus(ctx.gitView)
 			}
+		} else if event.Rune() == 'p' {
+			a.showPublishModal(ctx)
 		}
 		return event
 	})
+}
+
+func (a *App) showPublishModal(ctx *AppContext) {
+	modal := tview.NewModal().
+		SetText("Do you want to publish the selected draft?").
+		AddButtons([]string{"Publish", "Cancel"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			if buttonLabel == "Publish" {
+				a.logger.Debug("Publish")
+				// Add your publishing logic here
+			}
+		})
+	ctx.tviewApp.SetRoot(modal, false).SetFocus(modal)
 }
