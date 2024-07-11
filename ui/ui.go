@@ -8,7 +8,7 @@ import (
 )
 
 type UIInterface interface {
-	CreateDashboard(repoPath string) (*tview.Flex, *tview.List, *tview.List, *tview.TextView)
+	CreateDashboard(repoPath string, drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView)
 	CreateGitView(repoPath string) *tview.TextView
 }
 
@@ -18,27 +18,40 @@ type UI struct {
 // Ensure Menu implements MenuInterface
 var _ UIInterface = &UI{}
 
-// createList creates a new tview.List with the given title.
-func createList(title string) (*tview.Flex, *tview.List) {
-	list := tview.NewList().ShowSecondaryText(false).SetHighlightFullLine(true)
-	flex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(tview.NewTextView().SetText(title), 2, 1, false).
-		AddItem(list, 0, 1, true)
-	return flex, list
-}
-
 // CreateDashboard creates a new tview.Flex that contains two lists titled "Drafts" and "Posts".
-func (ui UI) CreateDashboard(repoPath string) (*tview.Flex, *tview.List, *tview.List, *tview.TextView) {
-	drafts, draftsList := createList("Drafts")
-	posts, postsList := createList("Posts")
+func (ui UI) CreateDashboard(repoPath string, drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView) {
 	gitView := ui.CreateGitView(repoPath)
+
+	// Create a tree for the menu
+	menu := tview.NewTreeView()
+
+	// Create root for the tree
+	root := tview.NewTreeNode("")
+
+	// Add drafts and posts to the tree
+	draftsNode := tview.NewTreeNode("Drafts")
+	for _, draft := range drafts {
+		draftsNode.AddChild(tview.NewTreeNode(draft))
+	}
+	root.AddChild(draftsNode)
+
+	postsNode := tview.NewTreeNode("Posts")
+	for _, post := range posts {
+		postsNode.AddChild(tview.NewTreeNode(post))
+	}
+	root.AddChild(postsNode)
+
+	menu.SetRoot(root).SetCurrentNode(root)
+
+	// Create a text view for the content of the selected draft or post
+	contentView := tview.NewTextView()
 
 	dashboard := tview.NewFlex().
 		AddItem(gitView, 0, 1, false).
-		AddItem(drafts, 0, 1, true).
-		AddItem(posts, 0, 1, false)
+		AddItem(menu, 0, 1, true).
+		AddItem(contentView, 0, 1, false)
 
-	return dashboard, draftsList, postsList, gitView
+	return dashboard, menu, contentView
 }
 
 func (ui UI) CreateGitView(repoPath string) *tview.TextView {

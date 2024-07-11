@@ -33,31 +33,30 @@ func (a *App) Run(args []string) {
 	sitePath := args[1]
 	app := tview.NewApplication()
 
-	dashboard, draftsList, postsList, _ := a.ui.CreateDashboard(sitePath)
-
 	// Add drafts and posts to the lists
+	// Get drafts and posts
 	drafts, err := a.fileHandler.GetFilenames(sitePath, "_drafts")
-	addItemsToList(draftsList, drafts, err)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	posts, err := a.fileHandler.GetFilenames(sitePath, "_posts")
-	addItemsToList(postsList, posts, err)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
-	// Add a special "Exit" item to the list
-	draftsList.AddItem("Exit", "", 0, func() {
-		app.Stop()
-	})
-	postsList.AddItem("Exit", "", 0, func() {
-		app.Stop()
-	})
-
-	// Create a slice of the lists to switch focus between
-	lists := []*tview.List{draftsList, postsList}
-	focusIndex := 0
+	// Create the dashboard with drafts and posts
+	dashboard, menu, contentView := a.ui.CreateDashboard(sitePath, drafts, posts)
 
 	// Set input capture to switch focus on Tab key press
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			focusIndex = (focusIndex + 1) % len(lists)
-			app.SetFocus(lists[focusIndex])
+			if app.GetFocus() == menu {
+				app.SetFocus(contentView)
+			} else {
+				app.SetFocus(menu)
+			}
 		}
 		return event
 	})
@@ -65,15 +64,5 @@ func (a *App) Run(args []string) {
 	if err := app.SetRoot(dashboard, true).Run(); err != nil {
 		log.Println("Could not set root")
 		panic(err)
-	}
-}
-
-func addItemsToList(list *tview.List, items []string, err error) {
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	for _, item := range items {
-		list.AddItem(item, "", 0, nil)
 	}
 }
