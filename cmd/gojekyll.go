@@ -37,7 +37,6 @@ func (a *App) Run(args []string) {
 	sitePath := args[1]
 	app := tview.NewApplication()
 
-	// Add drafts and posts to the lists
 	// Get drafts and posts
 	drafts, err := a.fileHandler.GetFilenames(sitePath, "_drafts")
 	if err != nil {
@@ -75,7 +74,7 @@ func (a *App) Run(args []string) {
 			filePath := path.Join(sitePath, dir, node.GetText())
 
 			// Read the content of the file
-			content, err := os.ReadFile(filePath)
+			content, err := a.fileHandler.ReadFile(filePath)
 			if err != nil {
 				a.logger.Error("Could not read file", err, "path", filePath)
 				return

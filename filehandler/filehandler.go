@@ -3,17 +3,19 @@ package filehandler
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 )
 
 type FileHandlerInterface interface {
 	GetFilenames(sitePath string, dirName string) ([]string, error)
+	ReadFile(filePath string) ([]byte, error)
 }
 
 type FileHandler struct {
 }
 
-// Ensure Menu implements MenuInterface
+// Ensure FileHandler implements FileHandlerInterface
 var _ FileHandlerInterface = &FileHandler{}
 
 func (fh FileHandler) GetFilenames(sitePath string, dirName string) ([]string, error) {
@@ -32,4 +34,8 @@ func (fh FileHandler) GetFilenames(sitePath string, dirName string) ([]string, e
 		return nil, fmt.Errorf("error reading %s: %v", dirName, err)
 	}
 	return filenames, nil
+}
+
+func (fh FileHandler) ReadFile(filePath string) ([]byte, error) {
+	return os.ReadFile(filePath)
 }
