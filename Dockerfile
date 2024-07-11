@@ -1,5 +1,5 @@
 # Start from the golang base image
-FROM golang:1.22 AS builder
+FROM golang:1.21 AS builder
 
 # Add Maintainer Info
 LABEL maintainer="Russell Jones <jonesrussell42@gmail.com>"
@@ -31,4 +31,4 @@ COPY --from=builder /app/gojekyll .
 
 RUN chmod u+x /root/gojekyll
 
-ENTRYPOINT /root/gojekyll jekyll
+ENTRYPOINT ["/root/gojekyll", "jekyll"]
