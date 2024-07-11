@@ -4,8 +4,11 @@ import (
 	"os"
 
 	"jonesrussell/jekyll-publisher/cmd"
+	"jonesrussell/jekyll-publisher/filehandler"
+	"jonesrussell/jekyll-publisher/ui"
 )
 
 func main() {
-	cmd.Run(os.Args)
+	app := cmd.NewApp(filehandler.FileHandler{}, ui.UI{})
+	app.Run(os.Args)
 }

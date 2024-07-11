@@ -12,18 +12,19 @@ import (
 	"github.com/rivo/tview"
 )
 
-// addItemsToList adds items to a list and handles any errors.
-func addItemsToList(list *tview.List, items []string, err error) {
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	for _, item := range items {
-		list.AddItem(item, "", 0, nil)
+type App struct {
+	fileHandler filehandler.FileHandler
+	ui          ui.UI
+}
+
+func NewApp(fileHandler filehandler.FileHandler, ui ui.UI) *App {
+	return &App{
+		fileHandler: fileHandler,
+		ui:          ui,
 	}
 }
 
-func Run(args []string) {
+func (a *App) Run(args []string) {
 	if len(args) < 2 {
 		fmt.Println("Please provide the path to the Jekyll site as an argument.")
 		os.Exit(1)
@@ -32,12 +33,12 @@ func Run(args []string) {
 	sitePath := args[1]
 	app := tview.NewApplication()
 
-	dashboard, draftsList, postsList := ui.CreateDashboard()
+	dashboard, draftsList, postsList := a.ui.CreateDashboard()
 
 	// Add drafts and posts to the lists
-	drafts, err := filehandler.GetFilenames(sitePath, "_drafts")
+	drafts, err := a.fileHandler.GetFilenames(sitePath, "_drafts")
 	addItemsToList(draftsList, drafts, err)
-	posts, err := filehandler.GetFilenames(sitePath, "_posts")
+	posts, err := a.fileHandler.GetFilenames(sitePath, "_posts")
 	addItemsToList(postsList, posts, err)
 
 	// Add a special "Exit" item to the list
@@ -64,5 +65,15 @@ func Run(args []string) {
 	if err := app.SetRoot(dashboard, true).Run(); err != nil {
 		log.Println("Could not set root")
 		panic(err)
+	}
+}
+
+func addItemsToList(list *tview.List, items []string, err error) {
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for _, item := range items {
+		list.AddItem(item, "", 0, nil)
 	}
 }

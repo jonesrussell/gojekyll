@@ -4,6 +4,16 @@ import (
 	"github.com/rivo/tview"
 )
 
+type UIInterface interface {
+	CreateDashboard() (*tview.Flex, *tview.List, *tview.List)
+}
+
+type UI struct {
+}
+
+// Ensure Menu implements MenuInterface
+var _ UIInterface = &UI{}
+
 // createList creates a new tview.List with the given title.
 func createList(title string) (*tview.Flex, *tview.List) {
 	list := tview.NewList().ShowSecondaryText(false).SetHighlightFullLine(true)
@@ -14,7 +24,7 @@ func createList(title string) (*tview.Flex, *tview.List) {
 }
 
 // CreateDashboard creates a new tview.Flex that contains two lists titled "Drafts" and "Posts".
-func CreateDashboard() (*tview.Flex, *tview.List, *tview.List) {
+func (ui UI) CreateDashboard() (*tview.Flex, *tview.List, *tview.List) {
 	drafts, draftsList := createList("Drafts")
 	posts, postsList := createList("Posts")
 

@@ -6,7 +6,17 @@ import (
 	"path/filepath"
 )
 
-func GetFilenames(sitePath string, dirName string) ([]string, error) {
+type FileHandlerInterface interface {
+	GetFilenames(sitePath string, dirName string) ([]string, error)
+}
+
+type FileHandler struct {
+}
+
+// Ensure Menu implements MenuInterface
+var _ FileHandlerInterface = &FileHandler{}
+
+func (fh FileHandler) GetFilenames(sitePath string, dirName string) ([]string, error) {
 	var filenames []string
 	dirPath := filepath.Join(sitePath, dirName)
 	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
