@@ -13,7 +13,8 @@
 				"premparihar.gotestexplorer",
 				"nhoizey.gremlins",
 				"ms-azuretools.vscode-docker",
-				"redhat.vscode-yaml"
+				"redhat.vscode-yaml",
+				"task.vscode-task"
 			]
 		}
 	},
