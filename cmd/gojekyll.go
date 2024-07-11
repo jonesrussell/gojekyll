@@ -47,15 +47,24 @@ func (a *App) Run(args []string) {
 	}
 
 	// Create the dashboard with drafts and posts
-	dashboard, menu, contentView := a.ui.CreateDashboard(sitePath, drafts, posts)
+	dashboard, menu, contentView, gitView := a.ui.CreateDashboard(sitePath, drafts, posts)
+
+	// Set the selected function to handle "Exit"
+	menu.SetSelectedFunc(func(node *tview.TreeNode) {
+		if node.GetText() == "Exit" {
+			app.Stop()
+		}
+	})
 
 	// Set input capture to switch focus on Tab key press
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			if app.GetFocus() == menu {
+			if app.GetFocus() == gitView {
+				app.SetFocus(menu)
+			} else if app.GetFocus() == menu {
 				app.SetFocus(contentView)
 			} else {
-				app.SetFocus(menu)
+				app.SetFocus(gitView)
 			}
 		}
 		return event
