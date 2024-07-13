@@ -3,7 +3,7 @@
 {
 	"name": "Go",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/go:1-1.22-bookworm",
+	"image": "mcr.microsoft.com/devcontainers/go:1-1.21-bookworm",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -23,12 +23,9 @@
 		"ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {},
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
 	},
-	"postCreateCommand": "go install github.com/go-task/task/v3/cmd/task@latest && go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest",
+	"postCreateCommand": "go install github.com/go-task/task/v3/cmd/task@latest && go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest"
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [
-		3000,
-		54112
-	]
+	// "forwardPorts": [	]
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
