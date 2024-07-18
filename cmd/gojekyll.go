@@ -8,18 +8,20 @@ import (
 	"path"
 	"time"
 
+	"github.com/epiclabs-io/winman"
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
+
 	"jonesrussell/jekyll-publisher/filehandler"
 	"jonesrussell/jekyll-publisher/logger"
 	"jonesrussell/jekyll-publisher/ui"
-
-	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
 )
 
 type App struct {
 	fileHandler *filehandler.FileHandler
 	ui          *ui.UI
 	logger      logger.LoggerInterface
+	wm          *winman.Manager
 }
 
 type AppContext struct {
@@ -36,7 +38,57 @@ func NewApp(fileHandler *filehandler.FileHandler, ui *ui.UI, logger logger.Logge
 		fileHandler: fileHandler,
 		ui:          ui,
 		logger:      logger,
+		wm:          winman.NewWindowManager(),
 	}
+}
+
+func (a *App) createDashboardContext(sitePath string, tviewApp *tview.Application) (*AppContext, error) {
+	// Get drafts and posts
+	drafts, err := a.fileHandler.GetFilenames(sitePath, "_drafts")
+	if err != nil {
+		return nil, err
+	}
+	posts, err := a.fileHandler.GetFilenames(sitePath, "_posts")
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the dashboard with drafts and posts
+	dashboard, menu, contentView, gitView, err := a.ui.CreateDashboard(drafts, posts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new resizable window with some text
+	a.createResizableWindow(tviewApp, "Hello, world!")
+
+	return &AppContext{
+		sitePath:    sitePath,
+		tviewApp:    tviewApp,
+		menu:        menu,
+		contentView: contentView,
+		gitView:     gitView,
+		dashboard:   dashboard,
+	}, nil
+}
+
+func (a *App) createResizableWindow(tviewApp *tview.Application, contentText string) {
+	content := tview.NewTextView().
+		SetText(contentText).
+		SetTextAlign(tview.AlignCenter)
+
+	window := a.wm.NewWindow().
+		Show().
+		SetRoot(content).
+		SetDraggable(true).
+		SetResizable(true).
+		SetTitle("Hi!").
+		AddButton(&winman.Button{
+			Symbol:  'X',
+			OnClick: func() { tviewApp.Stop() },
+		})
+
+	window.SetRect(5, 5, 30, 10)
 }
 
 func (a *App) Run(args []string) {
@@ -64,33 +116,6 @@ func (a *App) Run(args []string) {
 		log.Println("Could not set root")
 		panic(err)
 	}
-}
-
-func (a *App) createDashboardContext(sitePath string, tviewApp *tview.Application) (*AppContext, error) {
-	// Get drafts and posts
-	drafts, err := a.fileHandler.GetFilenames(sitePath, "_drafts")
-	if err != nil {
-		return nil, err
-	}
-	posts, err := a.fileHandler.GetFilenames(sitePath, "_posts")
-	if err != nil {
-		return nil, err
-	}
-
-	// Create the dashboard with drafts and posts
-	dashboard, menu, contentView, gitView, err := a.ui.CreateDashboard(drafts, posts)
-	if err != nil {
-		return nil, err
-	}
-
-	return &AppContext{
-		sitePath:    sitePath,
-		tviewApp:    tviewApp,
-		menu:        menu,
-		contentView: contentView,
-		gitView:     gitView,
-		dashboard:   dashboard,
-	}, nil
 }
 
 func (a *App) setMenuSelectedFunc(ctx *AppContext) {
