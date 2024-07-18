@@ -3,7 +3,9 @@
 {
 	"name": "Go",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/go:1-1.21-bookworm",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -21,9 +23,12 @@
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
 		"ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {},
-		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+		"ghcr.io/stuartleeks/dev-container-features/shell-history:0": {}
 	},
-	"postCreateCommand": "go install github.com/go-task/task/v3/cmd/task@latest && go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest"
+	"mounts": [
+		"source=/home/russell/Development/blog,target=/workspaces/blog,type=bind,consistency=cached"
+	]
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [	]
 	// Use 'postCreateCommand' to run commands after the container is created.
