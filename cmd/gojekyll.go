@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"time"
 
@@ -59,7 +60,11 @@ func (a *App) Run(args []string) {
 	}
 
 	// Create the dashboard with drafts and posts
-	dashboard, menu, contentView, gitView := a.ui.CreateDashboard(drafts, posts)
+	dashboard, menu, contentView, gitView, err := a.ui.CreateDashboard(drafts, posts)
+	if err != nil {
+		a.logger.Error("Could not create dashboard", err)
+		return
+	}
 
 	ctx := &AppContext{
 		sitePath:    sitePath,
@@ -119,7 +124,7 @@ func (a *App) handleFileSelection(node *tview.TreeNode, ctx *AppContext) {
 		return
 	}
 
-	a.logger.Debug(string(content))
+	// a.logger.Debug(string(content))
 	// Display the content in contentView
 	ctx.contentView.SetText(string(content))
 }
@@ -142,34 +147,63 @@ func (a *App) setInputCapture(ctx *AppContext) {
 }
 
 func (a *App) showPublishModal(ctx *AppContext) {
-	modal := tview.NewModal().
-		SetText("Do you want to publish the selected draft?").
-		AddButtons([]string{"Publish", "Cancel"}).
-		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			if buttonLabel == "Publish" {
-				a.logger.Debug("Publish")
-				// Get the currently selected node
-				node := ctx.menu.GetCurrentNode()
-				// Get the path of the selected node
-				pathNodes := ctx.menu.GetPath(node)
-				// Get the path of the selected file
-				filePath := path.Join(ctx.sitePath, "_drafts", node.GetText())
-				// Create the new path with the date prepended to the filename
-				newPath := path.Join(ctx.sitePath, "_posts", time.Now().Format("2006-01-02")+"-"+node.GetText())
-				// Move the file
-				err := os.Rename(filePath, newPath)
-				if err != nil {
-					a.logger.Error("Could not move file", err, "path", filePath)
-					return
-				}
-				// Update the UI
-				pathNodes[1].RemoveChild(node)
-				postsNode := pathNodes[0].GetChildren()[1]
-				postsNode.AddChild(node)
-				ctx.menu.SetCurrentNode(node)
-			}
-			// Dismiss the modal and return to the previous view
-			ctx.tviewApp.SetRoot(ctx.menu, true)
-		})
+	modal := a.createPublishModal(ctx)
 	ctx.tviewApp.SetRoot(modal, false).SetFocus(modal)
+}
+
+func (a *App) publishModalDoneFunc(ctx *AppContext) func(int, string) {
+	return func(buttonIndex int, buttonLabel string) {
+		if buttonLabel == "Publish" {
+			a.publishSelectedDraft(ctx)
+		}
+		// Dismiss the modal and return to the previous view
+		ctx.tviewApp.SetRoot(ctx.menu, true)
+	}
+}
+
+func (a *App) createPublishModal(ctx *AppContext) *tview.Modal {
+	// Get the currently selected node
+	node := ctx.menu.GetCurrentNode()
+	// Get the name of the draft
+	draftName := node.GetText()
+
+	return tview.NewModal().
+		SetText(fmt.Sprintf("Do you want to publish the draft '%s'?", draftName)).
+		AddButtons([]string{"Publish", "Cancel"}).
+		SetDoneFunc(a.publishModalDoneFunc(ctx))
+}
+
+func (a *App) publishSelectedDraft(ctx *AppContext) {
+	a.logger.Debug("Publish")
+	// Get the currently selected node
+	node := ctx.menu.GetCurrentNode()
+	// Get the path of the selected node
+	pathNodes := ctx.menu.GetPath(node)
+	// Get the path of the selected file
+	filePath := path.Join("_drafts", node.GetText())
+	// Create the new path with the date prepended to the filename
+	newFilename := time.Now().Format("2006-01-02") + "-" + node.GetText()
+	newPath := path.Join("_posts", newFilename)
+
+	// Debug logging before moving the file
+	cwd, _ := os.Getwd()
+	a.logger.Debug(fmt.Sprintf("Current working directory: '%s'", cwd))
+	a.logger.Debug(fmt.Sprintf("Moving file from '%s' to '%s'", filePath, newPath))
+
+	// Move the file
+	_, err := exec.Command("git", "-C", ctx.sitePath, "mv", filePath, newPath).Output()
+	if err != nil {
+		a.logger.Error("Could not move file", err, "path", filePath)
+		return
+	}
+
+	// Debug logging after moving the file
+	a.logger.Debug(fmt.Sprintf("Successfully moved file from '%s' to '%s'", filePath, newPath))
+
+	// Update the UI
+	pathNodes[1].RemoveChild(node)
+	postsNode := pathNodes[0].GetChildren()[1]
+	node.SetText(newFilename) // Update the node text with the new filename
+	postsNode.AddChild(node)
+	ctx.menu.SetCurrentNode(node)
 }

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-git/go-git/v5"
@@ -8,8 +9,8 @@ import (
 )
 
 type UIInterface interface {
-	CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView)
-	CreateGitView() *tview.TextView
+	CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView, error)
+	CreateGitView() (*tview.TextView, error)
 }
 
 type UI struct {
@@ -34,8 +35,11 @@ func (ui *UI) createNode(title string, items []string) *tview.TreeNode {
 }
 
 // CreateDashboard creates a new tview.Flex that contains two lists titled "Drafts" and "Posts".
-func (ui *UI) CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView) {
-	gitView := ui.CreateGitView()
+func (ui *UI) CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView, error) {
+	gitView, err := ui.CreateGitView()
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
 
 	// Create a tree for the menu
 	menu := tview.NewTreeView()
@@ -46,9 +50,6 @@ func (ui *UI) CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tv
 	// Add drafts and posts to the tree
 	root.AddChild(ui.createNode("Drafts", drafts))
 	root.AddChild(ui.createNode("Posts", posts))
-
-	// Add an "Exit" option to the tree
-	root.AddChild(tview.NewTreeNode("Exit"))
 
 	menu.SetRoot(root).SetCurrentNode(root)
 
@@ -64,19 +65,19 @@ func (ui *UI) CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tv
 		AddItem(firstColumn, 0, 1, true).
 		AddItem(contentView, 0, 1, false)
 
-	return dashboard, menu, contentView, gitView
+	return dashboard, menu, contentView, gitView, nil
 }
 
-func (ui *UI) CreateGitView() *tview.TextView {
+func (ui *UI) CreateGitView() (*tview.TextView, error) {
 	gitView := tview.NewTextView()
 
 	// Check if the sitePath is a Git repository
 	_, err := git.PlainOpen(ui.sitePath)
 	if err != nil {
-		gitView.SetText(fmt.Sprintf("The directory %s is not a Git repository. Consider running 'git init'.\n", ui.sitePath))
+		return nil, errors.New(fmt.Sprintf("The directory %s is not a Git repository. Consider running 'git init'.\n", ui.sitePath))
 	} else {
 		gitView.SetText(fmt.Sprintf("The directory %s is a Git repository.\n", ui.sitePath))
 	}
 
-	return gitView
+	return gitView, nil
 }
