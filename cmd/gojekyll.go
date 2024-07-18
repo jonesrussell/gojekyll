@@ -48,12 +48,12 @@ func (a *App) Run(args []string) {
 	tviewApp := tview.NewApplication()
 
 	// Get drafts and posts
-	drafts, err := a.getFilenames(sitePath, "_drafts")
+	drafts, err := a.fileHandler.GetFilenames(sitePath, "_drafts")
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	posts, err := a.getFilenames(sitePath, "_posts")
+	posts, err := a.fileHandler.GetFilenames(sitePath, "_posts")
 	if err != nil {
 		log.Println(err)
 		return
@@ -84,10 +84,6 @@ func (a *App) Run(args []string) {
 		log.Println("Could not set root")
 		panic(err)
 	}
-}
-
-func (a *App) getFilenames(sitePath, dir string) ([]string, error) {
-	return a.fileHandler.GetFilenames(sitePath, dir)
 }
 
 func (a *App) setMenuSelectedFunc(ctx *AppContext) {
