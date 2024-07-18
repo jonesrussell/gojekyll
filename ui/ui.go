@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/go-git/go-git/v5"
@@ -74,7 +73,7 @@ func (ui *UI) CreateGitView() (*tview.TextView, error) {
 	// Check if the sitePath is a Git repository
 	_, err := git.PlainOpen(ui.sitePath)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("The directory %s is not a Git repository. Consider running 'git init'.\n", ui.sitePath))
+		return nil, fmt.Errorf((fmt.Sprintf("The directory %s is not a Git repository. Consider running 'git init'.\n", ui.sitePath)))
 	} else {
 		gitView.SetText(fmt.Sprintf("The directory %s is a Git repository.\n", ui.sitePath))
 	}

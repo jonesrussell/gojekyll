@@ -28,6 +28,7 @@ type AppContext struct {
 	menu        *tview.TreeView
 	contentView *tview.TextView
 	gitView     tview.Primitive
+	dashboard   *tview.Flex
 }
 
 func NewApp(fileHandler *filehandler.FileHandler, ui *ui.UI, logger logger.LoggerInterface) *App {
@@ -47,31 +48,10 @@ func (a *App) Run(args []string) {
 	sitePath := args[1]
 	tviewApp := tview.NewApplication()
 
-	// Get drafts and posts
-	drafts, err := a.fileHandler.GetFilenames(sitePath, "_drafts")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	posts, err := a.fileHandler.GetFilenames(sitePath, "_posts")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	// Create the dashboard with drafts and posts
-	dashboard, menu, contentView, gitView, err := a.ui.CreateDashboard(drafts, posts)
+	ctx, err := a.createDashboardContext(sitePath, tviewApp)
 	if err != nil {
 		a.logger.Error("Could not create dashboard", err)
 		return
-	}
-
-	ctx := &AppContext{
-		sitePath:    sitePath,
-		tviewApp:    tviewApp,
-		menu:        menu,
-		contentView: contentView,
-		gitView:     gitView,
 	}
 
 	// Set the selected function to handle "Exit" and preview content
@@ -80,10 +60,37 @@ func (a *App) Run(args []string) {
 	// Set input capture to switch focus on Tab key press
 	a.setInputCapture(ctx)
 
-	if err := tviewApp.SetRoot(dashboard, true).Run(); err != nil {
+	if err := tviewApp.SetRoot(ctx.dashboard, true).Run(); err != nil {
 		log.Println("Could not set root")
 		panic(err)
 	}
+}
+
+func (a *App) createDashboardContext(sitePath string, tviewApp *tview.Application) (*AppContext, error) {
+	// Get drafts and posts
+	drafts, err := a.fileHandler.GetFilenames(sitePath, "_drafts")
+	if err != nil {
+		return nil, err
+	}
+	posts, err := a.fileHandler.GetFilenames(sitePath, "_posts")
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the dashboard with drafts and posts
+	dashboard, menu, contentView, gitView, err := a.ui.CreateDashboard(drafts, posts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AppContext{
+		sitePath:    sitePath,
+		tviewApp:    tviewApp,
+		menu:        menu,
+		contentView: contentView,
+		gitView:     gitView,
+		dashboard:   dashboard,
+	}, nil
 }
 
 func (a *App) setMenuSelectedFunc(ctx *AppContext) {
@@ -120,6 +127,7 @@ func (a *App) handleFileSelection(node *tview.TreeNode, ctx *AppContext) {
 		return
 	}
 
+	// TODO: logger that truncates
 	// a.logger.Debug(string(content))
 	// Display the content in contentView
 	ctx.contentView.SetText(string(content))
@@ -169,6 +177,29 @@ func (a *App) createPublishModal(ctx *AppContext) *tview.Modal {
 		SetDoneFunc(a.publishModalDoneFunc(ctx))
 }
 
+func (a *App) getFilePath(node *tview.TreeNode) string {
+	return path.Join("_drafts", node.GetText())
+}
+
+func (a *App) assembleNewPathAndFilename(node *tview.TreeNode) (string, string) {
+	newFilename := time.Now().Format("2006-01-02") + "-" + node.GetText()
+	newPath := path.Join("_posts", newFilename)
+	return newPath, newFilename
+}
+
+func (a *App) moveFile(ctx *AppContext, filePath string, newPath string) error {
+	_, err := exec.Command("git", "-C", ctx.sitePath, "mv", filePath, newPath).Output()
+	return err
+}
+
+func (a *App) updateUI(ctx *AppContext, node *tview.TreeNode, pathNodes []*tview.TreeNode, newFilename string) {
+	pathNodes[1].RemoveChild(node)
+	postsNode := pathNodes[0].GetChildren()[1]
+	node.SetText(newFilename) // Update the node text with the new filename
+	postsNode.AddChild(node)
+	ctx.menu.SetCurrentNode(node)
+}
+
 func (a *App) publishSelectedDraft(ctx *AppContext) {
 	a.logger.Debug("Publish")
 	// Get the currently selected node
@@ -176,10 +207,9 @@ func (a *App) publishSelectedDraft(ctx *AppContext) {
 	// Get the path of the selected node
 	pathNodes := ctx.menu.GetPath(node)
 	// Get the path of the selected file
-	filePath := path.Join("_drafts", node.GetText())
+	filePath := a.getFilePath(node)
 	// Create the new path with the date prepended to the filename
-	newFilename := time.Now().Format("2006-01-02") + "-" + node.GetText()
-	newPath := path.Join("_posts", newFilename)
+	newPath, newFilename := a.assembleNewPathAndFilename(node)
 
 	// Debug logging before moving the file
 	cwd, _ := os.Getwd()
@@ -187,7 +217,7 @@ func (a *App) publishSelectedDraft(ctx *AppContext) {
 	a.logger.Debug(fmt.Sprintf("Moving file from '%s' to '%s'", filePath, newPath))
 
 	// Move the file
-	_, err := exec.Command("git", "-C", ctx.sitePath, "mv", filePath, newPath).Output()
+	err := a.moveFile(ctx, filePath, newPath)
 	if err != nil {
 		a.logger.Error("Could not move file", err, "path", filePath)
 		return
@@ -197,9 +227,5 @@ func (a *App) publishSelectedDraft(ctx *AppContext) {
 	a.logger.Debug(fmt.Sprintf("Successfully moved file from '%s' to '%s'", filePath, newPath))
 
 	// Update the UI
-	pathNodes[1].RemoveChild(node)
-	postsNode := pathNodes[0].GetChildren()[1]
-	node.SetText(newFilename) // Update the node text with the new filename
-	postsNode.AddChild(node)
-	ctx.menu.SetCurrentNode(node)
+	a.updateUI(ctx, node, pathNodes, newFilename)
 }
