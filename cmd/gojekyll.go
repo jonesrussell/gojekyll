@@ -22,10 +22,10 @@ type App struct {
 	ui          *ui.UI
 	logger      logger.LoggerInterface
 	wm          *winman.Manager
+	sitePath    string
 }
 
 type AppContext struct {
-	sitePath    string
 	tviewApp    *tview.Application
 	menu        *tview.TreeView
 	contentView *tview.TextView
@@ -42,13 +42,13 @@ func NewApp(fileHandler *filehandler.FileHandler, ui *ui.UI, logger logger.Logge
 	}
 }
 
-func (a *App) createDashboardContext(sitePath string, tviewApp *tview.Application) (*AppContext, error) {
+func (a *App) createDashboardContext(tviewApp *tview.Application) (*AppContext, error) {
 	// Get drafts and posts
-	drafts, err := a.fileHandler.GetFilenames(sitePath, "_drafts")
+	drafts, err := a.fileHandler.GetFilenames(a.sitePath, "_drafts")
 	if err != nil {
 		return nil, err
 	}
-	posts, err := a.fileHandler.GetFilenames(sitePath, "_posts")
+	posts, err := a.fileHandler.GetFilenames(a.sitePath, "_posts")
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,6 @@ func (a *App) createDashboardContext(sitePath string, tviewApp *tview.Applicatio
 	a.createResizableWindow(tviewApp, "Hello, world!")
 
 	return &AppContext{
-		sitePath:    sitePath,
 		tviewApp:    tviewApp,
 		menu:        menu,
 		contentView: contentView,
@@ -91,31 +90,59 @@ func (a *App) createResizableWindow(tviewApp *tview.Application, contentText str
 	window.SetRect(5, 5, 30, 10)
 }
 
-func (a *App) Run(args []string) {
+// New function to handle site path argument
+func (a *App) handleSitePathArg(args []string) {
 	if len(args) < 2 {
 		fmt.Println("Please provide the path to the Jekyll site as an argument.")
 		os.Exit(1)
 	}
+	a.sitePath = args[1]
+}
 
-	sitePath := args[1]
+// Refactored Run function
+func (a *App) Run(args []string) {
+	a.handleSitePathArg(args)
 	tviewApp := tview.NewApplication()
 
-	ctx, err := a.createDashboardContext(sitePath, tviewApp)
+	ctx, err := a.createDashboardContext(tviewApp)
 	if err != nil {
 		a.logger.Error("Could not create dashboard", err)
 		return
 	}
 
-	// Set the selected function to handle "Exit" and preview content
 	a.setMenuSelectedFunc(ctx)
-
-	// Set input capture to switch focus on Tab key press
 	a.setInputCapture(ctx)
 
 	if err := tviewApp.SetRoot(ctx.dashboard, true).Run(); err != nil {
 		log.Println("Could not set root")
 		panic(err)
 	}
+}
+
+// Refactored publishSelectedDraft function
+func (a *App) publishSelectedDraft(ctx *AppContext) {
+	a.logger.Debug("Publish")
+
+	node, pathNodes := a.getCurrentNodeAndPath(ctx)
+	filePath := a.getFilePath(node)
+	newPath, newFilename := a.assembleNewPathAndFilename(node)
+
+	a.logger.Debug(fmt.Sprintf("Moving file from '%s' to '%s'", filePath, newPath))
+
+	if err := a.moveFile(filePath, newPath); err != nil {
+		a.logger.Error("Could not move file", err, "path", filePath)
+		return
+	}
+
+	a.logger.Debug(fmt.Sprintf("Successfully moved file from '%s' to '%s'", filePath, newPath))
+	a.updateUI(ctx, node, pathNodes, newFilename)
+}
+
+// New function to get current node and path
+func (a *App) getCurrentNodeAndPath(ctx *AppContext) (*tview.TreeNode, []*tview.TreeNode) {
+	node := ctx.menu.GetCurrentNode()
+	pathNodes := ctx.menu.GetPath(node)
+	return node, pathNodes
 }
 
 func (a *App) setMenuSelectedFunc(ctx *AppContext) {
@@ -143,7 +170,7 @@ func (a *App) handleFileSelection(node *tview.TreeNode, ctx *AppContext) {
 	}
 
 	// Get the path of the selected file
-	filePath := path.Join(ctx.sitePath, dir, node.GetText())
+	filePath := path.Join(a.sitePath, dir, node.GetText())
 
 	// Read the content of the file
 	content, err := a.fileHandler.ReadFile(filePath)
@@ -212,8 +239,8 @@ func (a *App) assembleNewPathAndFilename(node *tview.TreeNode) (string, string) 
 	return newPath, newFilename
 }
 
-func (a *App) moveFile(ctx *AppContext, filePath string, newPath string) error {
-	_, err := exec.Command("git", "-C", ctx.sitePath, "mv", filePath, newPath).Output()
+func (a *App) moveFile(filePath string, newPath string) error {
+	_, err := exec.Command("git", "-C", a.sitePath, "mv", filePath, newPath).Output()
 	return err
 }
 
@@ -223,34 +250,4 @@ func (a *App) updateUI(ctx *AppContext, node *tview.TreeNode, pathNodes []*tview
 	node.SetText(newFilename) // Update the node text with the new filename
 	postsNode.AddChild(node)
 	ctx.menu.SetCurrentNode(node)
-}
-
-func (a *App) publishSelectedDraft(ctx *AppContext) {
-	a.logger.Debug("Publish")
-	// Get the currently selected node
-	node := ctx.menu.GetCurrentNode()
-	// Get the path of the selected node
-	pathNodes := ctx.menu.GetPath(node)
-	// Get the path of the selected file
-	filePath := a.getFilePath(node)
-	// Create the new path with the date prepended to the filename
-	newPath, newFilename := a.assembleNewPathAndFilename(node)
-
-	// Debug logging before moving the file
-	cwd, _ := os.Getwd()
-	a.logger.Debug(fmt.Sprintf("Current working directory: '%s'", cwd))
-	a.logger.Debug(fmt.Sprintf("Moving file from '%s' to '%s'", filePath, newPath))
-
-	// Move the file
-	err := a.moveFile(ctx, filePath, newPath)
-	if err != nil {
-		a.logger.Error("Could not move file", err, "path", filePath)
-		return
-	}
-
-	// Debug logging after moving the file
-	a.logger.Debug(fmt.Sprintf("Successfully moved file from '%s' to '%s'", filePath, newPath))
-
-	// Update the UI
-	a.updateUI(ctx, node, pathNodes, newFilename)
 }
