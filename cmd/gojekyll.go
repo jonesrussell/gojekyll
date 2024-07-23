@@ -82,7 +82,7 @@ func (a *App) createDashboardContext(tviewApp *tview.Application) (*AppContext, 
 	}
 
 	// Create a new resizable window with some text
-	a.createResizableWindow("Hello, world!", menu)
+	a.createResizableWindow("Blog Posts", menu)
 	a.createResizableWindow("Content View", contentView)
 	a.createResizableWindow("Git View", gitView)
 
@@ -111,7 +111,15 @@ func (a *App) createResizableWindow(title string, content tview.Primitive) {
 			OnClick: func() { a.wm.RemoveWindow(window) },
 		})
 
-	window.SetRect(5, 5, 30, 10)
+	// Set the position and size of the window based on its title
+	switch title {
+	case "Blog Posts":
+		window.SetRect(0, 0, 40, 20) // Larger window at the top left corner
+	case "Content View":
+		window.SetRect(40, 0, 40, 20) // Larger window at the top right corner
+	default:
+		window.SetRect(0, 20, 80, 10) // Smaller window at the bottom
+	}
 }
 
 // Refactored publishSelectedDraft function
