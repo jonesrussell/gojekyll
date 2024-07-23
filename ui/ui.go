@@ -3,12 +3,13 @@ package ui
 import (
 	"fmt"
 
+	"github.com/epiclabs-io/winman"
 	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
 )
 
 type UIInterface interface {
-	CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView, error)
+	CreateDashboard(drafts []string, posts []string) (*winman.Manager, *tview.TreeView, *tview.TextView, *tview.TextView, error)
 	CreateGitView() (*tview.TextView, error)
 }
 
@@ -36,7 +37,7 @@ func (ui *UI) createNode(title string, items []string) *tview.TreeNode {
 }
 
 // CreateDashboard creates a new tview.Flex that contains two lists titled "Drafts" and "Posts".
-func (ui *UI) CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tview.TreeView, *tview.TextView, *tview.TextView, error) {
+func (ui *UI) CreateDashboard(drafts []string, posts []string) (*winman.Manager, *tview.TreeView, *tview.TextView, *tview.TextView, error) {
 	gitView, err := ui.CreateGitView()
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -57,16 +58,20 @@ func (ui *UI) CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tv
 	// Create a text view for the content of the selected draft or post
 	contentView := tview.NewTextView()
 
-	// Create a flex for the first column
-	firstColumn := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(gitView, 2, 1, false). // gitView takes up a fixed space
-		AddItem(menu, 0, 1, true)      // menu takes up the remaining space
+	// Create a WindowManager
+	wm := winman.NewWindowManager()
 
-	dashboard := tview.NewFlex().
-		AddItem(firstColumn, 0, 1, true).
-		AddItem(contentView, 0, 1, false)
+	// Create windows for the gitView, menu, and contentView
+	gitWindow := wm.NewWindow().SetRoot(gitView).SetTitle("Git View")
+	menuWindow := wm.NewWindow().SetRoot(menu).SetTitle("Menu")
+	contentWindow := wm.NewWindow().SetRoot(contentView).SetTitle("Content View")
 
-	return dashboard, menu, contentView, gitView, nil
+	// Add the windows to the WindowManager
+	wm.AddWindow(gitWindow)
+	wm.AddWindow(menuWindow)
+	wm.AddWindow(contentWindow)
+
+	return wm, menu, contentView, gitView, nil
 }
 
 // CreateGitView creates a new Git view

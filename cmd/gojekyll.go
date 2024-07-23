@@ -48,7 +48,7 @@ func (a *App) Run(args []string) {
 	a.setMenuSelectedFunc(ctx)
 	a.setInputCapture(ctx)
 
-	if err := tviewApp.SetRoot(ctx.dashboard, true).Run(); err != nil {
+	if err := tviewApp.SetRoot(a.wm, true).EnableMouse(true).Run(); err != nil {
 		log.Println("Could not set root")
 		panic(err)
 	}
@@ -82,7 +82,9 @@ func (a *App) createDashboardContext(tviewApp *tview.Application) (*AppContext, 
 	}
 
 	// Create a new resizable window with some text
-	a.createResizableWindow(tviewApp, "Hello, world!")
+	a.createResizableWindow("Hello, world!", menu)
+	a.createResizableWindow("Content View", contentView)
+	a.createResizableWindow("Git View", gitView)
 
 	return &AppContext{
 		tviewApp:    tviewApp,
@@ -94,20 +96,19 @@ func (a *App) createDashboardContext(tviewApp *tview.Application) (*AppContext, 
 }
 
 // createResizableWindow creates a resizable window
-func (a *App) createResizableWindow(tviewApp *tview.Application, contentText string) {
-	content := tview.NewTextView().
-		SetText(contentText).
-		SetTextAlign(tview.AlignCenter)
+func (a *App) createResizableWindow(title string, content tview.Primitive) {
+	// Define the window variable
+	window := a.wm.NewWindow()
 
-	window := a.wm.NewWindow().
-		Show().
+	// Set the window properties
+	window.Show().
 		SetRoot(content).
 		SetDraggable(true).
 		SetResizable(true).
-		SetTitle("Hi!").
+		SetTitle(title).
 		AddButton(&winman.Button{
 			Symbol:  'X',
-			OnClick: func() { tviewApp.Stop() },
+			OnClick: func() { a.wm.RemoveWindow(window) },
 		})
 
 	window.SetRect(5, 5, 30, 10)
