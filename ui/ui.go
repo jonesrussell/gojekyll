@@ -19,12 +19,14 @@ type UI struct {
 // Ensure UI implements UIInterface
 var _ UIInterface = &UI{}
 
+// NewUI creates a new UI instance
 func NewUI(sitePath string) *UI {
 	return &UI{
 		sitePath: sitePath,
 	}
 }
 
+// createNode creates a new node with the given title and items
 func (ui *UI) createNode(title string, items []string) *tview.TreeNode {
 	node := tview.NewTreeNode(title)
 	for _, item := range items {
@@ -67,6 +69,7 @@ func (ui *UI) CreateDashboard(drafts []string, posts []string) (*tview.Flex, *tv
 	return dashboard, menu, contentView, gitView, nil
 }
 
+// CreateGitView creates a new Git view
 func (ui *UI) CreateGitView() (*tview.TextView, error) {
 	gitView := tview.NewTextView()
 
