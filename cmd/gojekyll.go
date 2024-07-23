@@ -189,7 +189,7 @@ func (a *App) publishModalDoneFunc(ctx *AppContext) func(int, string) {
 			a.publishSelectedDraft(ctx)
 		}
 		// Dismiss the modal and return to the previous view
-		ctx.tviewApp.SetRoot(ctx.dashboard, true)
+		ctx.tviewApp.SetRoot(a.wm, true)
 	}
 }
 
