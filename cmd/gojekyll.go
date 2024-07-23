@@ -82,9 +82,9 @@ func (a *App) createDashboardContext(tviewApp *tview.Application) (*AppContext, 
 	}
 
 	// Create a new resizable window with some text
-	a.createResizableWindow("Blog Posts", menu)
-	a.createResizableWindow("Content View", contentView)
-	a.createResizableWindow("Git View", gitView)
+	a.ui.CreateResizableWindow("Blog Posts", menu, a.wm)
+	a.ui.CreateResizableWindow("Content View", contentView, a.wm)
+	a.ui.CreateResizableWindow("Git View", gitView, a.wm)
 
 	return &AppContext{
 		tviewApp:    tviewApp,
@@ -93,33 +93,6 @@ func (a *App) createDashboardContext(tviewApp *tview.Application) (*AppContext, 
 		gitView:     gitView,
 		dashboard:   dashboard,
 	}, nil
-}
-
-// createResizableWindow creates a resizable window
-func (a *App) createResizableWindow(title string, content tview.Primitive) {
-	// Define the window variable
-	window := a.wm.NewWindow()
-
-	// Set the window properties
-	window.Show().
-		SetRoot(content).
-		SetDraggable(true).
-		SetResizable(true).
-		SetTitle(title).
-		AddButton(&winman.Button{
-			Symbol:  'X',
-			OnClick: func() { a.wm.RemoveWindow(window) },
-		})
-
-	// Set the position and size of the window based on its title
-	switch title {
-	case "Blog Posts":
-		window.SetRect(0, 0, 40, 20) // Larger window at the top left corner
-	case "Content View":
-		window.SetRect(40, 0, 40, 20) // Larger window at the top right corner
-	default:
-		window.SetRect(0, 20, 80, 10) // Smaller window at the bottom
-	}
 }
 
 // Refactored publishSelectedDraft function

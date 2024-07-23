@@ -11,6 +11,7 @@ import (
 type UIInterface interface {
 	CreateDashboard(drafts []string, posts []string) (*winman.Manager, *tview.TreeView, *tview.TextView, *tview.TextView, error)
 	CreateGitView() (*tview.TextView, error)
+	CreateResizableWindow(title string, content tview.Primitive, wm *winman.Manager)
 }
 
 type UI struct {
@@ -87,4 +88,31 @@ func (ui *UI) CreateGitView() (*tview.TextView, error) {
 	}
 
 	return gitView, nil
+}
+
+// CreateResizableWindow creates a resizable window
+func (ui *UI) CreateResizableWindow(title string, content tview.Primitive, wm *winman.Manager) { // Add this function
+	// Define the window variable
+	window := wm.NewWindow()
+
+	// Set the window properties
+	window.Show().
+		SetRoot(content).
+		SetDraggable(true).
+		SetResizable(true).
+		SetTitle(title).
+		AddButton(&winman.Button{
+			Symbol:  'X',
+			OnClick: func() { wm.RemoveWindow(window) },
+		})
+
+	// Set the position and size of the window based on its title
+	switch title {
+	case "Blog Posts":
+		window.SetRect(0, 0, 40, 20) // Larger window at the top left corner
+	case "Content View":
+		window.SetRect(40, 0, 40, 20) // Larger window at the top right corner
+	default:
+		window.SetRect(0, 20, 80, 10) // Smaller window at the bottom
+	}
 }
