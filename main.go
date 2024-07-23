@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"jonesrussell/jekyll-publisher/cmd"
-	"jonesrussell/jekyll-publisher/filehandler"
-	"jonesrussell/jekyll-publisher/logger"
-	"jonesrussell/jekyll-publisher/ui"
+	"jonesrussell/gojekyll/cmd"
+	"jonesrussell/gojekyll/filehandler"
+	"jonesrussell/gojekyll/logger"
+	"jonesrussell/gojekyll/ui"
 )
 
 func main() {

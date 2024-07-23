@@ -1,4 +1,4 @@
-module jonesrussell/jekyll-publisher
+module jonesrussell/gojekyll
 
 go 1.21
 

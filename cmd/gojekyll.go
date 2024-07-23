@@ -11,9 +11,9 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 
-	"jonesrussell/jekyll-publisher/filehandler"
-	"jonesrussell/jekyll-publisher/logger"
-	"jonesrussell/jekyll-publisher/ui"
+	"jonesrussell/gojekyll/filehandler"
+	"jonesrussell/gojekyll/logger"
+	"jonesrussell/gojekyll/ui"
 )
 
 type App struct {
