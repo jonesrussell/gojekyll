@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
 type FileHandlerInterface interface {
 	GetFilenames(sitePath string, dirName string) ([]string, error)
 	ReadFile(filePath string) ([]byte, error)
+	MoveFile(filePath string, newPath string, sitePath string) error
 }
 
 type FileHandler struct {
@@ -42,4 +44,9 @@ func (fh FileHandler) GetFilenames(sitePath string, dirName string) ([]string, e
 
 func (fh FileHandler) ReadFile(filePath string) ([]byte, error) {
 	return os.ReadFile(filePath)
+}
+
+func (fh FileHandler) MoveFile(filePath string, newPath string, sitePath string) error {
+	_, err := exec.Command("git", "-C", sitePath, "mv", filePath, newPath).Output()
+	return err
 }

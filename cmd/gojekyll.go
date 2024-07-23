@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"time"
 
@@ -23,14 +22,6 @@ type App struct {
 	logger      logger.LoggerInterface
 	wm          *winman.Manager
 	sitePath    string
-}
-
-type AppContext struct {
-	tviewApp    *tview.Application
-	menu        *tview.TreeView
-	contentView *tview.TextView
-	gitView     tview.Primitive
-	dashboard   *tview.Flex
 }
 
 func NewApp(fileHandler *filehandler.FileHandler, ui *ui.UI, logger logger.LoggerInterface) *App {
@@ -129,7 +120,7 @@ func (a *App) publishSelectedDraft(ctx *AppContext) {
 
 	a.logger.Debug(fmt.Sprintf("Moving file from '%s' to '%s'", filePath, newPath))
 
-	if err := a.moveFile(filePath, newPath); err != nil {
+	if err := a.fileHandler.MoveFile(filePath, newPath, a.sitePath); err != nil {
 		a.logger.Error("Could not move file", err, "path", filePath)
 		return
 	}
@@ -237,11 +228,6 @@ func (a *App) assembleNewPathAndFilename(node *tview.TreeNode) (string, string) 
 	newFilename := time.Now().Format("2006-01-02") + "-" + node.GetText()
 	newPath := path.Join("_posts", newFilename)
 	return newPath, newFilename
-}
-
-func (a *App) moveFile(filePath string, newPath string) error {
-	_, err := exec.Command("git", "-C", a.sitePath, "mv", filePath, newPath).Output()
-	return err
 }
 
 func (a *App) updateUI(ctx *AppContext, node *tview.TreeNode, pathNodes []*tview.TreeNode, newFilename string) {
