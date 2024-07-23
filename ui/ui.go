@@ -100,11 +100,7 @@ func (ui *UI) CreateResizableWindow(title string, content tview.Primitive, wm *w
 		SetRoot(content).
 		SetDraggable(true).
 		SetResizable(true).
-		SetTitle(title).
-		AddButton(&winman.Button{
-			Symbol:  'X',
-			OnClick: func() { wm.RemoveWindow(window) },
-		})
+		SetTitle(title)
 
 	// Set the position and size of the window based on its title
 	switch title {
