@@ -24,6 +24,7 @@ type App struct {
 	sitePath    string
 }
 
+// NewApp creates a new App instance
 func NewApp(fileHandler *filehandler.FileHandler, ui *ui.UI, logger logger.LoggerInterface) *App {
 	return &App{
 		fileHandler: fileHandler,
@@ -33,6 +34,36 @@ func NewApp(fileHandler *filehandler.FileHandler, ui *ui.UI, logger logger.Logge
 	}
 }
 
+// Run starts the application
+func (a *App) Run(args []string) {
+	a.handleSitePathArg(args)
+	tviewApp := tview.NewApplication()
+
+	ctx, err := a.createDashboardContext(tviewApp)
+	if err != nil {
+		a.logger.Error("Could not create dashboard", err)
+		return
+	}
+
+	a.setMenuSelectedFunc(ctx)
+	a.setInputCapture(ctx)
+
+	if err := tviewApp.SetRoot(ctx.dashboard, true).Run(); err != nil {
+		log.Println("Could not set root")
+		panic(err)
+	}
+}
+
+// handleSitePathArg handles the site path argument
+func (a *App) handleSitePathArg(args []string) {
+	if len(args) < 2 {
+		fmt.Println("Please provide the path to the Jekyll site as an argument.")
+		os.Exit(1)
+	}
+	a.sitePath = args[1]
+}
+
+// createDashboardContext creates the dashboard context
 func (a *App) createDashboardContext(tviewApp *tview.Application) (*AppContext, error) {
 	// Get drafts and posts
 	drafts, err := a.fileHandler.GetFilenames(a.sitePath, "_drafts")
@@ -62,6 +93,7 @@ func (a *App) createDashboardContext(tviewApp *tview.Application) (*AppContext, 
 	}, nil
 }
 
+// createResizableWindow creates a resizable window
 func (a *App) createResizableWindow(tviewApp *tview.Application, contentText string) {
 	content := tview.NewTextView().
 		SetText(contentText).
@@ -79,35 +111,6 @@ func (a *App) createResizableWindow(tviewApp *tview.Application, contentText str
 		})
 
 	window.SetRect(5, 5, 30, 10)
-}
-
-// New function to handle site path argument
-func (a *App) handleSitePathArg(args []string) {
-	if len(args) < 2 {
-		fmt.Println("Please provide the path to the Jekyll site as an argument.")
-		os.Exit(1)
-	}
-	a.sitePath = args[1]
-}
-
-// Refactored Run function
-func (a *App) Run(args []string) {
-	a.handleSitePathArg(args)
-	tviewApp := tview.NewApplication()
-
-	ctx, err := a.createDashboardContext(tviewApp)
-	if err != nil {
-		a.logger.Error("Could not create dashboard", err)
-		return
-	}
-
-	a.setMenuSelectedFunc(ctx)
-	a.setInputCapture(ctx)
-
-	if err := tviewApp.SetRoot(ctx.dashboard, true).Run(); err != nil {
-		log.Println("Could not set root")
-		panic(err)
-	}
 }
 
 // Refactored publishSelectedDraft function
