@@ -49,9 +49,7 @@ func (a *App) Run(args []string) {
 	a.setInputCapture(ctx)
 
 	// Create a new text view for the status bar
-	statusBar := tview.NewTextView().
-		SetTextAlign(tview.AlignCenter).
-		SetText("Status Bar")
+	statusBar := a.ui.CreateStatusBar()
 
 	// Create a new flex for the layout
 	flex := tview.NewFlex().
@@ -97,12 +95,16 @@ func (a *App) createDashboardContext(tviewApp *tview.Application) (*AppContext, 
 	a.ui.CreateResizableWindow("Content View", contentView, a.wm)
 	a.ui.CreateResizableWindow("Git View", gitView, a.wm)
 
+	// Create a new text view for the status bar
+	statusBar := a.ui.CreateStatusBar()
+
 	return &AppContext{
 		tviewApp:    tviewApp,
 		menu:        menu,
 		contentView: contentView,
 		gitView:     gitView,
 		dashboard:   dashboard,
+		statusBar:   statusBar,
 	}, nil
 }
 
@@ -110,7 +112,7 @@ func (a *App) createDashboardContext(tviewApp *tview.Application) (*AppContext, 
 func (a *App) publishSelectedDraft(ctx *AppContext) {
 	a.logger.Debug("Publish")
 
-	node, pathNodes := a.getCurrentNodeAndPath(ctx)
+	node := a.getCurrentNode(ctx)
 	filePath := a.getFilePath(node)
 	newPath, newFilename := a.assembleNewPathAndFilename(node)
 
@@ -122,14 +124,13 @@ func (a *App) publishSelectedDraft(ctx *AppContext) {
 	}
 
 	a.logger.Debug(fmt.Sprintf("Successfully moved file from '%s' to '%s'", filePath, newPath))
-	a.updateUI(ctx, node, pathNodes, newFilename)
+	a.ui.UpdateUI(ctx.menu, node, newFilename)
 }
 
 // New function to get current node and path
-func (a *App) getCurrentNodeAndPath(ctx *AppContext) (*tview.TreeNode, []*tview.TreeNode) {
+func (a *App) getCurrentNode(ctx *AppContext) *tview.TreeNode {
 	node := ctx.menu.GetCurrentNode()
-	pathNodes := ctx.menu.GetPath(node)
-	return node, pathNodes
+	return node
 }
 
 func (a *App) setMenuSelectedFunc(ctx *AppContext) {
@@ -157,8 +158,11 @@ func (a *App) handleFileSelection(node *tview.TreeNode, ctx *AppContext) {
 	var dir string
 	if pathNodes[1].GetText() == "Drafts" {
 		dir = "_drafts"
+		a.logger.Debug("Should be updating status")
+		ctx.statusBar.SetText("Press 'p' to publish the draft") // Set the status bar text
 	} else if pathNodes[1].GetText() == "Posts" {
 		dir = "_posts"
+		ctx.statusBar.SetText("") // Clear the status bar text
 	} else {
 		return
 	}
@@ -173,8 +177,6 @@ func (a *App) handleFileSelection(node *tview.TreeNode, ctx *AppContext) {
 		return
 	}
 
-	// TODO: logger that truncates
-	// a.logger.Debug(string(content))
 	// Display the content in contentView
 	ctx.contentView.SetText(string(content))
 }
@@ -197,7 +199,10 @@ func (a *App) setInputCapture(ctx *AppContext) {
 }
 
 func (a *App) showPublishModal(ctx *AppContext) {
-	modal := a.createPublishModal(ctx)
+	// Get the currently selected node
+	node := ctx.menu.GetCurrentNode()
+
+	modal := a.ui.CreatePublishModal(node, a.publishModalDoneFunc(ctx))
 	ctx.tviewApp.SetRoot(modal, false).SetFocus(modal)
 }
 
@@ -211,18 +216,6 @@ func (a *App) publishModalDoneFunc(ctx *AppContext) func(int, string) {
 	}
 }
 
-func (a *App) createPublishModal(ctx *AppContext) *tview.Modal {
-	// Get the currently selected node
-	node := ctx.menu.GetCurrentNode()
-	// Get the name of the draft
-	draftName := node.GetText()
-
-	return tview.NewModal().
-		SetText(fmt.Sprintf("Do you want to publish the draft '%s'?", draftName)).
-		AddButtons([]string{"Publish", "Cancel"}).
-		SetDoneFunc(a.publishModalDoneFunc(ctx))
-}
-
 func (a *App) getFilePath(node *tview.TreeNode) string {
 	return path.Join("_drafts", node.GetText())
 }
@@ -231,12 +224,4 @@ func (a *App) assembleNewPathAndFilename(node *tview.TreeNode) (string, string) 
 	newFilename := time.Now().Format("2006-01-02") + "-" + node.GetText()
 	newPath := path.Join("_posts", newFilename)
 	return newPath, newFilename
-}
-
-func (a *App) updateUI(ctx *AppContext, node *tview.TreeNode, pathNodes []*tview.TreeNode, newFilename string) {
-	pathNodes[1].RemoveChild(node)
-	postsNode := pathNodes[0].GetChildren()[1]
-	node.SetText(newFilename) // Update the node text with the new filename
-	postsNode.AddChild(node)
-	ctx.menu.SetCurrentNode(node)
 }

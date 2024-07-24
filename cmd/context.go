@@ -11,4 +11,5 @@ type AppContext struct {
 	contentView *tview.TextView
 	gitView     tview.Primitive
 	dashboard   *winman.Manager
+	statusBar   *tview.TextView
 }

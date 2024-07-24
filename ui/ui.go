@@ -12,6 +12,9 @@ type UIInterface interface {
 	CreateDashboard(drafts []string, posts []string) (*winman.Manager, *tview.TreeView, *tview.TextView, *tview.TextView, error)
 	CreateGitView() (*tview.TextView, error)
 	CreateResizableWindow(title string, content tview.Primitive, wm *winman.Manager)
+	CreateStatusBar() *tview.TextView
+	CreatePublishModal(node *tview.TreeNode, doneFunc func(int, string)) *tview.Modal
+	UpdateUI(menu *tview.TreeView, node *tview.TreeNode, newFilename string)
 }
 
 type UI struct {
@@ -124,4 +127,33 @@ func (ui *UI) CreateResizableWindow(title string, content tview.Primitive, wm *w
 	default:
 		window.SetRect(0, 20, 80, 10) // Smaller window at the bottom
 	}
+}
+
+// CreateStatusBar creates a new text view for the status bar
+func (ui *UI) CreateStatusBar() *tview.TextView {
+	statusBar := tview.NewTextView().
+		SetTextAlign(tview.AlignCenter).
+		SetText("Status Bar")
+	return statusBar
+}
+
+// CreatePublishModal creates a new modal for publishing drafts
+func (ui *UI) CreatePublishModal(node *tview.TreeNode, doneFunc func(int, string)) *tview.Modal {
+	// Get the name of the draft
+	draftName := node.GetText()
+
+	return tview.NewModal().
+		SetText(fmt.Sprintf("Do you want to publish the draft '%s'?", draftName)).
+		AddButtons([]string{"Publish", "Cancel"}).
+		SetDoneFunc(doneFunc)
+}
+
+// UpdateUI updates the UI after a draft is published
+func (ui *UI) UpdateUI(menu *tview.TreeView, node *tview.TreeNode, newFilename string) {
+	pathNodes := menu.GetPath(node)
+	pathNodes[1].RemoveChild(node)
+	postsNode := pathNodes[0].GetChildren()[1]
+	node.SetText(newFilename) // Update the node text with the new filename
+	postsNode.AddChild(node)
+	menu.SetCurrentNode(node)
 }
