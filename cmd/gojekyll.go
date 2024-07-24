@@ -140,10 +140,8 @@ func (a *App) setMenuSelectedFunc(ctx *AppContext) {
 			// Get the path of the selected node
 			pathNodes := ctx.menu.GetPath(node)
 
-			// Check if a directory is selected
-			if len(pathNodes) == 1 || node.GetText() == "Drafts" || node.GetText() == "Posts" {
-				// A directory is selected, do nothing
-			} else {
+			// Check if a file is selected
+			if len(pathNodes) > 1 && node.GetText() != "Drafts" && node.GetText() != "Posts" {
 				// A file is selected, handle it
 				a.handleFileSelection(node, ctx)
 			}
