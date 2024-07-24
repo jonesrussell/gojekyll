@@ -48,7 +48,18 @@ func (a *App) Run(args []string) {
 	a.setMenuSelectedFunc(ctx)
 	a.setInputCapture(ctx)
 
-	if err := tviewApp.SetRoot(a.wm, true).EnableMouse(true).Run(); err != nil {
+	// Create a new text view for the status bar
+	statusBar := tview.NewTextView().
+		SetTextAlign(tview.AlignCenter).
+		SetText("Status Bar")
+
+	// Create a new flex for the layout
+	flex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(a.wm, 0, 1, true).      // The WindowManager takes up the rest of the space
+		AddItem(statusBar, 1, 1, false) // The status bar has a fixed height of 1
+
+	if err := tviewApp.SetRoot(flex, true).EnableMouse(true).Run(); err != nil {
 		log.Println("Could not set root")
 		panic(err)
 	}
@@ -126,7 +137,16 @@ func (a *App) setMenuSelectedFunc(ctx *AppContext) {
 		if node.GetText() == "Exit" {
 			ctx.tviewApp.Stop()
 		} else {
-			a.handleFileSelection(node, ctx)
+			// Get the path of the selected node
+			pathNodes := ctx.menu.GetPath(node)
+
+			// Check if a directory is selected
+			if len(pathNodes) == 1 || node.GetText() == "Drafts" || node.GetText() == "Posts" {
+				// A directory is selected, do nothing
+			} else {
+				// A file is selected, handle it
+				a.handleFileSelection(node, ctx)
+			}
 		}
 	})
 }

@@ -80,12 +80,25 @@ func (ui *UI) CreateGitView() (*tview.TextView, error) {
 	gitView := tview.NewTextView()
 
 	// Check if the sitePath is a Git repository
-	_, err := git.PlainOpen(ui.sitePath)
+	repo, err := git.PlainOpen(ui.sitePath)
 	if err != nil {
 		return nil, fmt.Errorf((fmt.Sprintf("The directory %s is not a Git repository. Consider running 'git init'.\n", ui.sitePath)))
-	} else {
-		gitView.SetText(fmt.Sprintf("The directory %s is a Git repository.\n", ui.sitePath))
 	}
+
+	// Get the worktree of the repository
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the worktree of the repository: %v", err)
+	}
+
+	// Get the status of the worktree
+	status, err := worktree.Status()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the status of the worktree: %v", err)
+	}
+
+	// Write the status of the repository to the gitView
+	gitView.SetText(fmt.Sprintf("The directory %s is a Git repository.\nStatus:\n%s\n", ui.sitePath, status))
 
 	return gitView, nil
 }
